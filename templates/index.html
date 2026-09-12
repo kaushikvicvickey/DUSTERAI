@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Metrology & Particle Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-mono antialiased">
+    <header class="border-b border-slate-800 bg-slate-900/70 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span>
+            <h1 class="text-sm font-semibold tracking-wider text-slate-200 uppercase">Optical Particle Metrology</h1>
+        </div>
+        <span class="text-xs text-slate-500">Ubuntu Engine 1.0</span>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 md:p-10">
+        {% if error %}
+        <div class="mb-6 p-4 bg-red-950/70 border border-red-800 text-red-300 rounded-lg text-xs">
+            [SYS_ERR] {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" class="border border-slate-800 hover:border-slate-700 rounded-xl p-8 text-center bg-slate-900/40 mb-8 transition-colors">
+            <input type="file" name="file" id="fileInput" class="hidden" onchange="this.form.submit()" accept="image/*">
+            <label for="fileInput" class="cursor-pointer block">
+                <svg class="w-8 h-8 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <div class="text-sm font-medium text-slate-200">Click to upload device screen photograph</div>
+                <div class="text-xs text-slate-500 mt-1">Recommended: Screen off, black display under direct side-lighting</div>
+            </label>
+        </form>
+
+        {% if metrics %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-lg">
+                <div class="text-xs text-slate-500 uppercase tracking-widest">Detected Particles</div>
+                <div class="text-3xl font-bold text-amber-400 mt-2">{{ metrics.total_particles }}</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-lg">
+                <div class="text-xs text-slate-500 uppercase tracking-widest">Mean Particle Size</div>
+                <div class="text-3xl font-bold text-slate-200 mt-2">{{ metrics.mean_particle_size_px }} <span class="text-xs font-normal text-slate-500">px²</span></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-lg">
+                <div class="text-xs text-slate-500 uppercase tracking-widest">Status Rating</div>
+                <div class="text-sm font-semibold text-emerald-400 mt-3">{{ metrics.surface_contamination_index }}</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wider mb-3 font-semibold">Raw Ingest</div>
+                <img src="{{ url_for('static', filename='uploads/' + original) }}" class="w-full rounded border border-slate-800 max-h-[400px] object-contain">
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wider mb-3 font-semibold">Top-Hat Segmented Overlay</div>
+                <img src="{{ url_for('static', filename='uploads/' + metrics.annotated_image_filename) }}" class="w-full rounded border border-slate-800 max-h-[400px] object-contain">
+            </div>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>
