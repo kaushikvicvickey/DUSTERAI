@@ -16,7 +16,7 @@ class DustParticleEngine:
         self.min_area = min_area
         self.max_area = max_area
         self.min_circularity = min_circularity
-        # 15x15 pixel rectangular structuring element to extract small bright features
+    
         self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
 
     def analyze(self, image_path: str, output_dir: str) -> DetectionMetrics:
@@ -24,27 +24,25 @@ class DustParticleEngine:
         if img is None:
             raise ValueError("Could not decode image from file.")
 
-        # Step A: Convert to single-channel 8-bit grayscale
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # Step B: Contrast Limited Adaptive Histogram Equalization (CLAHE)
-        # Prevents room shadows and dim lighting from skewing detection
+
+
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         contrast_adjusted = clahe.apply(gray)
 
-        # Step C: White Top-Hat Transform
-        # Computes: Input Image - Morphological Opening
-        # Result: Leaves ONLY features that are brighter than their local background
+        
         tophat = cv2.morphologyEx(contrast_adjusted, cv2.MORPH_TOPHAT, self.kernel)
 
-        # Step D: Automatic thresholding via Otsu's algorithm
+        
         _, binary = cv2.threshold(tophat, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # Step E: Morphological Opening (Erosion followed by Dilation) to drop 1-pixel camera noise
+      
         noise_kernel = np.ones((2, 2), np.uint8)
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, noise_kernel)
 
-        # Step F: Extract contours of remaining candidate particles
+      
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         annotated = img.copy()
@@ -57,19 +55,19 @@ class DustParticleEngine:
                 if perimeter == 0:
                     continue
 
-                # Mathematical Circularity: 4 * pi * Area / (Perimeter^2)
-                # True spheres/dots score near 1.0; long fibers/hair score near 0.0
+
+
                 circularity = (4 * np.pi * area) / (perimeter * perimeter)
                 if circularity >= self.min_circularity:
                     valid_areas.append(area)
                     (x, y), radius = cv2.minEnclosingCircle(cnt)
-                    # Draw a high-visibility target ring around each particle
+
                     cv2.circle(annotated, (int(x), int(y)), max(int(radius) + 2, 4), (0, 180, 255), 1)
 
         total_count = len(valid_areas)
         mean_size = float(np.mean(valid_areas)) if total_count > 0 else 0.0
 
-        # Heuristic Cleanliness Rating
+
         if total_count < 15:
             rating = "Clean (Low Contamination)"
         elif total_count <= 60:
